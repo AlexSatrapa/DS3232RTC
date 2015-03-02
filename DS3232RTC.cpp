@@ -59,7 +59,7 @@ bool DS3232RTC::available() {
   Wire.endTransmission();
   Wire.requestFrom(DS3232_I2C_ADDRESS, 1);
   if (Wire.available()) {
-    uint8_t dummy = Wire.read();
+    Wire.read();
     return true;
   }
   return false;
@@ -479,6 +479,8 @@ void DS3232RTC::_wTime(tmElements_t &tm) {
   Wire.write(dec2bcd(tm.Hour));   // set hours [NB! sets 24 hour format]
 }
 
+
+
 /**
  *
  */
@@ -539,8 +541,8 @@ DS3232RTC RTC = DS3232RTC();  // instantiate for use
  */
 DS3232SRAM::DS3232SRAM()
   : _cursor(0)
-  , _avail(false)
   , _init(false)
+  , _avail(false)
 {
   Wire.begin();
 }
@@ -647,7 +649,7 @@ int DS3232SRAM::available() {
     Wire.endTransmission();
     Wire.requestFrom(DS3232_I2C_ADDRESS, 1);
     if (Wire.available()) {
-      uint8_t dummy = Wire.read();
+      Wire.read();
       _avail = true;
     } else {
       _avail = false;
