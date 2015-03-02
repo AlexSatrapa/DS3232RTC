@@ -254,6 +254,10 @@ void cmdDate(const char *args)
             Serial.println(len, DEC);
             return;
         }
+        tm.Hour = 0;
+        tm.Minute = 0;
+        tm.Second = 0;
+        tm.Wday = 0; // Request DOW calculation
         RTC.writeDate(tm);
         Serial.print("Date has been set to: ");
     } /* */
