@@ -20,47 +20,11 @@
 #define DS3232RTC_h
 
 #include <stdint.h>
-#include <Wire.h>    // http://arduino.cc/en/Reference/Wire
-#include <Stream.h>  // http://arduino.cc/en/Reference/Stream
-#include <Time.h>    // http://playground.arduino.cc/Code/time
+#include <RTC.h>
+#include <Time.h>
 
 // Based on page 11 of specs; http://www.maxim-ic.com/datasheet/index.mvp/id/4984
 #define DS3232_I2C_ADDRESS 0x68
-
-enum alarmMode_t {
-  alarmModeUnknown,       // not in spec table
-  alarmModePerSecond,     // once per second, A1 only
-  alarmModePerMinute,     // once per minute, A2 only
-  alarmModeSecondsMatch,  // when seconds match, A1 only
-  alarmModeMinutesMatch,  // when minutes [and seconds] match
-  alarmModeHoursMatch,    // when hours, minutes [and seconds] match
-  alarmModeDateMatch,     // when date (of month), hours, minutes [and seconds] match
-  alarmModeDayMatch,      // when day (of week), hours, minutes [and seconds] match
-  alarmModeOff            // set to date or day, but value is 0
-  };
-
-enum sqiMode_t {
-  sqiModeNone, 
-  sqiMode1Hz, 
-  sqiMode1024Hz, 
-  sqiMode4096Hz, 
-  sqiMode8192Hz, 
-  sqiModeAlarm1, 
-  sqiModeAlarm2, 
-  sqiModeAlarmBoth
-  };
-
-enum tempScanRate_t {
-  tempScanRate64sec,
-  tempScanRate128sec,
-  tempScanRate256sec,
-  tempScanRate512sec
-  };
-
-typedef struct  { 
-  int8_t Temp; 
-  uint8_t Decimal; 
-} tpElements_t, TempElements, *tpElementsPtr_t;
 
 static const uint8_t NO_TEMPERATURE = 0x7F; 
 
@@ -91,6 +55,8 @@ class DS3232RTC
     static void setBBSqareWave(bool enable);
     static void setSQIMode(sqiMode_t mode);
     static bool isAlarmInterupt(uint8_t alarm);
+    static uint8_t readControlRegister();
+    static uint8_t readStatusRegister();
     // Control/Status Register
     static bool isOscillatorStopFlag();
     static void setOscillatorStopFlag(bool enable);

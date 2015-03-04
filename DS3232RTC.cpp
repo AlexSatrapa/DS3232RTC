@@ -8,39 +8,7 @@
 #include <Stdint.h>
 #include <Wire.h>
 #include <Stream.h>
-#include "DS3232RTC.h"
-
-// Bits in the Control register
-// Based on page 13 of specs; http://www.maxim-ic.com/datasheet/index.mvp/id/4984
-#define DS3232_EOSC         0x80
-#define DS3232_BBSQW        0x40
-#define DS3232_CONV         0x20
-#define DS3232_RS2          0x10
-#define DS3232_RS1          0x08
-#define DS3232_INTCN        0x04
-#define DS3232_A2IE         0x02
-#define DS3232_A1IE         0x01
-
-#define DS3232_RS_1HZ       0x00
-#define DS3232_RS_1024HZ    0x08
-#define DS3232_RS_4096HZ    0x10
-#define DS3232_RS_8192HZ    0x18
-
-// Bits in the Status register
-// Based on page 14 of specs; http://www.maxim-ic.com/datasheet/index.mvp/id/4984
-#define DS3232_OSF          0x80
-#define DS3232_BB33KHZ      0x40
-#define DS3232_CRATE1       0x20
-#define DS3232_CRATE0       0x10
-#define DS3232_EN33KHZ      0x08
-#define DS3232_BSY          0x04
-#define DS3232_A2F          0x02
-#define DS3232_A1F          0x01
-
-#define DS3232_CRATE_64     0x00
-#define DS3232_CRATE_128    0x10
-#define DS3232_CRATE_256    0x20
-#define DS3232_CRATE_512    0x30
+#include <DS3232RTC.h>
 
 /* +----------------------------------------------------------------------+ */
 /* | DS3232RTC Class                                                      | */ 
@@ -340,6 +308,20 @@ bool DS3232RTC::isAlarmInterupt(uint8_t alarm) {
 }
 
 /**
+ *  Read the control register.
+ */
+uint8_t DS3232RTC::readControlRegister() {
+	return read1(0x0E);
+}
+
+/**
+ *  Read the status register.
+ */
+uint8_t DS3232RTC::readStatusRegister() {
+	return read1(0x0F);
+}
+
+/**
  *
  */
 bool DS3232RTC::isOscillatorStopFlag() {
@@ -529,8 +511,6 @@ void DS3232RTC::write1(uint8_t addr, uint8_t data){
   Wire.endTransmission();
 }
 
-DS3232RTC RTC = DS3232RTC();  // instantiate for use
-
 
 /* +----------------------------------------------------------------------+ */
 /* | DS3232SRAM Class                                                      | */ 
@@ -540,9 +520,9 @@ DS3232RTC RTC = DS3232RTC();  // instantiate for use
  * \brief Attaches to the DS3232 RTC module on the I2C Wire
  */
 DS3232SRAM::DS3232SRAM()
-  : _cursor(0)
-  , _init(false)
+  : _init(false)
   , _avail(false)
+  , _cursor(0)
 {
   Wire.begin();
 }
