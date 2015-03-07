@@ -18,7 +18,6 @@
  *
  */
 DS3232RTC::DS3232RTC() {
-  Wire.begin();
 }
 
 bool DS3232RTC::available() {
