@@ -297,7 +297,11 @@ void DS3232RTC::setSQIMode(sqiMode_t mode) {
   write1(0x0E, value);  // sends 0Eh - Control register
 }
 
-bool DS3232RTC::isAlarmInterupt(uint8_t alarm) {
+/**
+ * Returns 1 if the given alarm is enabled
+ */
+
+bool DS3232RTC::isAlarmInterrupt(uint8_t alarm) {
   if ((alarm > 2) || (alarm < 1)) return false;
   uint8_t value = read1(0x0E) & 0x07;  // sends 0Eh - Control register
   if (alarm == 1) {
@@ -391,7 +395,7 @@ bool DS3232RTC::isTCXOBusy() {
 }
 
 /**
- *
+ * Returns 1 if the given alarm is flagged
  */
 bool DS3232RTC::isAlarmFlag(uint8_t alarm) {
   uint8_t value = isAlarmFlag();

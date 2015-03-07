@@ -54,7 +54,7 @@ class DS3232RTC
     static void setBBOscillator(bool enable);
     static void setBBSqareWave(bool enable);
     static void setSQIMode(sqiMode_t mode);
-    static bool isAlarmInterupt(uint8_t alarm);
+    static bool isAlarmInterrupt(uint8_t alarm);
     static uint8_t readControlRegister();
     static uint8_t readStatusRegister();
     // Control/Status Register
