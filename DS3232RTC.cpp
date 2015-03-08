@@ -258,9 +258,9 @@ void DS3232RTC::setBBOscillator(bool enable) {
   // Bit7 is NOT EOSC, i.e. 0=started, 1=stopped when on battery power
   uint8_t value = read1(0x0E);  // sends 0Eh - Control register
   if (enable) {
-    value &= ~(DS3232_EOSC);
+    value &= ~(DS323X_EOSC);
   } else {
-    value |= DS3232_EOSC;
+    value |= DS323X_EOSC;
   }
   write1(0x0E, value);    // sends 0Eh - Control register
 }
@@ -271,9 +271,9 @@ void DS3232RTC::setBBOscillator(bool enable) {
 void DS3232RTC::setBBSqareWave(bool enable) {
   uint8_t value = read1(0x0E);  // sends 0Eh - Control register
   if (enable) {
-    value |= DS3232_BBSQW;
+    value |= DS323X_BBSQW;
   } else {
-    value &= ~(DS3232_BBSQW);
+    value &= ~(DS323X_BBSQW);
   }
   write1(0x0E, value);  // sends 0Eh - Control register
 }
@@ -284,14 +284,14 @@ void DS3232RTC::setBBSqareWave(bool enable) {
 void DS3232RTC::setSQIMode(sqiMode_t mode) {
   uint8_t value = read1(0x0E) & 0xE0;  // sends 0Eh - Control register
   switch (mode) {
-    case sqiModeNone: value |= DS3232_INTCN; break;
-    case sqiMode1Hz: value |= DS3232_RS_1HZ;  break;
-    case sqiMode1024Hz: value |= DS3232_RS_1024HZ; break;
-    case sqiMode4096Hz: value |= DS3232_RS_4096HZ; break;
-    case sqiMode8192Hz: value |= DS3232_RS_8192HZ; break;
-    case sqiModeAlarm1: value |= (DS3232_INTCN | DS3232_A1IE); break;
-    case sqiModeAlarm2: value |= (DS3232_INTCN | DS3232_A2IE); break;
-    case sqiModeAlarmBoth: value |= (DS3232_INTCN | DS3232_A1IE | DS3232_A2IE); break;
+    case sqiModeNone: value |= DS323X_INTCN; break;
+    case sqiMode1Hz: value |= DS323X_RS_1HZ;  break;
+    case sqiMode1024Hz: value |= DS323X_RS_1024HZ; break;
+    case sqiMode4096Hz: value |= DS323X_RS_4096HZ; break;
+    case sqiMode8192Hz: value |= DS323X_RS_8192HZ; break;
+    case sqiModeAlarm1: value |= (DS323X_INTCN | DS323X_A1IE); break;
+    case sqiModeAlarm2: value |= (DS323X_INTCN | DS323X_A2IE); break;
+    case sqiModeAlarmBoth: value |= (DS323X_INTCN | DS323X_A1IE | DS323X_A2IE); break;
   }
   write1(0x0E, value);  // sends 0Eh - Control register
 }
@@ -329,7 +329,7 @@ uint8_t DS3232RTC::readStatusRegister() {
  */
 bool DS3232RTC::isOscillatorStopFlag() {
   uint8_t value = read1(0x0F);  // sends 0Fh - Ctrl/Status register
-  return ((value & DS3232_OSF) != 0);
+  return ((value & DS323X_OSF) != 0);
 }
 
 /**
@@ -338,9 +338,9 @@ bool DS3232RTC::isOscillatorStopFlag() {
 void DS3232RTC::setOscillatorStopFlag(bool enable) {
   uint8_t value = read1(0x0F);  // sends 0Fh - Ctrl/Status register
   if (enable) {
-    value |= DS3232_OSF;
+    value |= DS323X_OSF;
   } else {
-    value &= ~(DS3232_OSF);
+    value &= ~(DS323X_OSF);
   }
   write1(0x0F, value);  // sends 0Fh - Ctrl/Status register
 }
@@ -351,9 +351,9 @@ void DS3232RTC::setOscillatorStopFlag(bool enable) {
 void DS3232RTC::setBB33kHzOutput(bool enable) {
   uint8_t value = read1(0x0F);  // sends 0Fh - Ctrl/Status register
   if (enable) {
-    value |= DS3232_BB33KHZ;
+    value |= DS323X_BB33KHZ;
   } else {
-    value &= ~(DS3232_BB33KHZ);
+    value &= ~(DS323X_BB33KHZ);
   }
   write1(0x0F, value);  // sends 0Fh - Ctrl/Status register
 }
@@ -364,10 +364,10 @@ void DS3232RTC::setBB33kHzOutput(bool enable) {
 void DS3232RTC::setTCXORate(tempScanRate_t rate) {
   uint8_t value = read1(0x0F) & 0xCF;  // sends 0Fh - Ctrl/Status register
   switch (rate) {
-    case tempScanRate64sec: value |= DS3232_CRATE_64; break;
-    case tempScanRate128sec: value |= DS3232_CRATE_128; break;
-    case tempScanRate256sec: value |= DS3232_CRATE_256; break;
-    case tempScanRate512sec: value |= DS3232_CRATE_512; break;
+    case tempScanRate64sec: value |= DS323X_CRATE_64; break;
+    case tempScanRate128sec: value |= DS323X_CRATE_128; break;
+    case tempScanRate256sec: value |= DS323X_CRATE_256; break;
+    case tempScanRate512sec: value |= DS323X_CRATE_512; break;
   }
   write1(0x0F, value);  // sends 0Fh - Ctrl/Status register
 }
@@ -378,9 +378,9 @@ void DS3232RTC::setTCXORate(tempScanRate_t rate) {
 void DS3232RTC::set33kHzOutput(bool enable) {
   uint8_t value = read1(0x0F);  // sends 0Fh - Ctrl/Status register
   if (enable) {
-    value |= DS3232_EN33KHZ;
+    value |= DS323X_EN33KHZ;
   } else {
-    value &= ~(DS3232_EN33KHZ);
+    value &= ~(DS323X_EN33KHZ);
   }
   write1(0x0F, value);  // sends 0Fh - Ctrl/Status register
 }
@@ -390,7 +390,7 @@ void DS3232RTC::set33kHzOutput(bool enable) {
  */
 bool DS3232RTC::isTCXOBusy() {
   uint8_t value = read1(0x0F);  // sends 0Fh - Ctrl/Status register
-  return ((value & DS3232_BSY) != 0);
+  return ((value & DS323X_BSY) != 0);
 }
 
 /**
@@ -406,18 +406,18 @@ bool DS3232RTC::isAlarmFlag(uint8_t alarm) {
  */
 uint8_t DS3232RTC::isAlarmFlag(){
   uint8_t value = read1(0x0F);  // sends 0Fh - Ctrl/Status register
-  return (value & (DS3232_A1F | DS3232_A2F));
+  return (value & (DS323X_A1F | DS323X_A2F));
 }
 
 /**
  *
  */
 void DS3232RTC::clearAlarmFlag(uint8_t alarm) {
-  alarm &= (DS3232_A1F | DS3232_A2F);
+  alarm &= (DS323X_A1F | DS323X_A2F);
   if (alarm == 0) return;
   alarm = ~alarm;  // invert
-  alarm &= (DS3232_A1F | DS3232_A2F);
-  uint8_t value = read1(0x0F) & (~(DS3232_A1F | DS3232_A2F));  // sends 0Fh - Ctrl/Status register
+  alarm &= (DS323X_A1F | DS323X_A2F);
+  uint8_t value = read1(0x0F) & (~(DS323X_A1F | DS323X_A2F));  // sends 0Fh - Ctrl/Status register
   value |= alarm;
   write1(0x0F, value);  // sends 0Fh - Ctrl/Status register
 }

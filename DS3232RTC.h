@@ -19,14 +19,10 @@
 #ifndef DS3232RTC_h
 #define DS3232RTC_h
 
-#include <stdint.h>
 #include <RTC.h>
-#include <Time.h>
 
 // Based on page 11 of specs; http://www.maxim-ic.com/datasheet/index.mvp/id/4984
 #define DS3232_I2C_ADDRESS 0x68
-
-static const uint8_t NO_TEMPERATURE = 0x7F; 
 
 // Helpers
 #define temperatureCToF(C) (C * 9 / 5 + 32)
