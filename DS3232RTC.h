@@ -8,7 +8,7 @@
 #endif
 
 #include <Time.h>
-#include <RTC.h>
+#include <DSRTC.h>
 
 // Based on page 11 of specs; http://www.maxim-ic.com/datasheet/index.mvp/id/4984
 #define DS3232_I2C_ADDRESS 0x68
