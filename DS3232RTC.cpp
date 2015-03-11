@@ -331,14 +331,14 @@ bool DS3232RTC::isAlarmInterrupt(uint8_t alarm) {
  *  Read the control register.
  */
 uint8_t DS3232RTC::readControlRegister() {
-	return read1(0x0E);
+  return read1(0x0E);
 }
 
 /**
  *  Read the status register.
  */
 uint8_t DS3232RTC::readStatusRegister() {
-	return read1(0x0F);
+  return read1(0x0F);
 }
 
 /**
