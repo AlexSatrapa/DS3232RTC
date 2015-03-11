@@ -54,52 +54,69 @@ void DS3232RTC::set(time_t t) {
  *
  */
 void DS3232RTC::read( tmElements_t &tm ) { 
-  uint8_t b;
+  uint8_t TimeDate[7];
+  uint8_t century = 0;
 
-  Wire.beginTransmission(DS3232_I2C_ADDRESS);
-  Wire.write(0);  // sends 00h - seconds register
-  Wire.endTransmission();
-  Wire.requestFrom(DS3232_I2C_ADDRESS, 7);
+  readN(DS323X_TIME_REGS, TimeDate, 7);
 
-  if (Wire.available()) {
-    tm.Second = bcd2dec(Wire.read() & 0x7F);  // 00h
-    tm.Minute = bcd2dec(Wire.read() & 0x7F);  // 01h
-    b = Wire.read() & 0x7F;                   // 02h
-    if ((b & 0x40) != 0) {  // 12 hour format with bit 5 set as PM
-      tm.Hour = bcd2dec(b & 0x1F);
-      if ((b & 0x20) != 0) tm.Hour += 12;
-    } else {  // 24 hour format
-      tm.Hour = bcd2dec(b & 0x3F);
-    }
-    tm.Wday =  bcd2dec(Wire.read() & 0x07);   // 03h
-    tm.Day =   bcd2dec(Wire.read() & 0x3F);   // 04h
-    b = Wire.read() & 0x9F;                   // 05h
-    tm.Month = bcd2dec(b & 0x1F);
-    tm.Year =  bcd2dec(Wire.read());   // 06h
-    if ((b & 0x80) != 0) tm.Year += 100;
-    tm.Year = y2kYearToTm(tm.Year);
+  tm.Second = bcd2dec(TimeDate[0] & 0x7F);
+  tm.Minute = bcd2dec(TimeDate[1] & 0x7F);
+  if ((TimeDate[2] & 0x40) != 0)
+  {
+    // Convert 12-hour format to 24-hour format
+    tm.Hour = bcd2dec(TimeDate[2] & 0x1F);
+    if((TimeDate[2] & 0x20) != 0) tm.Hour += 12;
+  } else {
+    tm.Hour = bcd2dec(TimeDate[2] & 0x3F);
   }
+  tm.Wday = bcd2dec(TimeDate[3] & 0x07);
+  tm.Day = bcd2dec(TimeDate[4] & 0x3F);
+  tm.Month = bcd2dec(TimeDate[5] & 0x1F);
+  tm.Year = bcd2dec(TimeDate[6]);
+  century = (TimeDate[5] & 0x80);
+  if (century != 0) tm.Year += 100;
+  tm.Year = y2kYearToTm(tm.Year);
 }
 
 /**
  *
  */
 void DS3232RTC::writeTime(tmElements_t &tm) {
-  Wire.beginTransmission(DS3232_I2C_ADDRESS);
-  Wire.write(0);  // sends 00h - seconds register
-  _wTime(tm);
-  Wire.endTransmission();
-  setOscillatorStopFlag(false);
+  uint8_t TimeDate[7];
+
+  TimeDate[0] = dec2bcd(tm.Second);
+  TimeDate[1] = dec2bcd(tm.Minute);
+  TimeDate[2] = dec2bcd(tm.Hour);
+
+  writeN(DS323X_TIME_REGS, TimeDate, 3);
 }
 
 /**
  *
  */
-void DS3232RTC::writeDate(tmElements_t &tm) {
-  Wire.beginTransmission(DS3232_I2C_ADDRESS);
-  Wire.write(3);  // sends 03h - day (of week) register
-  _wDate(tm);
-  Wire.endTransmission();
+void DS3232RTC::writeDate(tmElements_t &tm)
+{
+  uint8_t y;
+  uint8_t TimeDate[7];
+
+  if( tm.Wday == 0 || tm.Wday > 7)
+  {
+    tmElements_t tm2;
+    breakTime( makeTime(tm), tm2 );  // Calculate Wday by converting to Unix time and back
+    tm.Wday = tm2.Wday;
+  }
+  TimeDate[3] = tm.Wday;
+  TimeDate[4] = dec2bcd(tm.Day);
+  TimeDate[5] = dec2bcd(tm.Month);
+  y = tmYearToY2k(tm.Year);
+  if (y > 99)
+  {
+    TimeDate[5] |= 0x80; // century flag
+    y -= 100;
+  }
+  TimeDate[6] = dec2bcd(y);
+
+  writeN(DS323X_DATE_REGS, TimeDate + 3 * sizeof(uint8_t), 4);
 }
 
 /**
@@ -455,15 +472,6 @@ uint8_t DS3232RTC::bcd2dec(uint8_t num) {
   return (num/16 * 10) + (num % 16);
 }
 
-/**
- *
- */
-void DS3232RTC::_wTime(tmElements_t &tm) {
-  Wire.write(dec2bcd(tm.Second)); // set seconds
-  Wire.write(dec2bcd(tm.Minute)); // set minutes
-  Wire.write(dec2bcd(tm.Hour));   // set hours [NB! sets 24 hour format]
-}
-
 
 
 /**
@@ -514,6 +522,33 @@ void DS3232RTC::write1(uint8_t addr, uint8_t data){
   Wire.endTransmission();
 }
 
+void DS3232RTC::readN(uint8_t addr, uint8_t buf[], uint8_t len)
+{
+  uint8_t i;
+  Wire.beginTransmission(DS3232_I2C_ADDRESS);
+  Wire.write(addr);
+  Wire.endTransmission();
+  Wire.requestFrom((uint8_t) DS3232_I2C_ADDRESS, (uint8_t) len);
+  if (Wire.available())
+  {
+    for (i=0; i<len; i++)
+    {
+      buf[i] = Wire.read();
+    }
+  }
+}
+
+void DS3232RTC::writeN(uint8_t addr, uint8_t buf[], uint8_t len)
+{
+  uint8_t i;
+  Wire.beginTransmission(DS3232_I2C_ADDRESS);
+  Wire.write(addr);
+  for (i=0; i<len; i++)
+  {
+    Wire.write(buf[i]);
+  }
+  Wire.endTransmission();
+}
 
 /* +----------------------------------------------------------------------+ */
 /* | DS3232SRAM Class                                                      | */ 

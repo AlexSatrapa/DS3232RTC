@@ -73,6 +73,8 @@ class DS3232RTC
     static void _wDate(tmElements_t &tm);
     static uint8_t read1(uint8_t addr);
     static void write1(uint8_t addr, uint8_t data);
+    static void readN(uint8_t addr, uint8_t buf[], uint8_t len);
+    static void writeN(uint8_t addr, uint8_t buf[], uint8_t len);
 };
 
 extern DS3232RTC RTC;
