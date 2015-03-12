@@ -479,7 +479,7 @@ uint8_t DS3232RTC::isAlarmFlag(){
 void DS3232RTC::clearAlarmFlag(uint8_t alarm) {
 	uint8_t alarm_mask, value;
 
-	if ((alarm != 1) and (alarm != 2)) return;
+	if ((alarm != 1) and (alarm != 2) and (alarm != 3)) return;
 	alarm_mask = ~alarm;
 
 	value = readStatusRegister();
