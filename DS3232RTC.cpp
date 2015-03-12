@@ -78,6 +78,35 @@ void DS3232RTC::read( tmElements_t &tm ) {
   tm.Year = y2kYearToTm(tm.Year);
 }
 
+inline void DS3232RTC::populateTimeElements( tmElements_t &tm, uint8_t TimeDate[] )
+{
+	TimeDate[0] = dec2bcd(tm.Second);
+	TimeDate[1] = dec2bcd(tm.Minute);
+	TimeDate[2] = dec2bcd(tm.Hour);
+}
+
+inline void DS3232RTC::populateDateElements( tmElements_t &tm, uint8_t TimeDate[] )
+{
+	uint8_t y;
+
+	if( tm.Wday == 0 || tm.Wday > 7)
+	{
+		tmElements_t tm2;
+		breakTime( makeTime(tm), tm2 );  // Calculate Wday by converting to Unix time and back
+		tm.Wday = tm2.Wday;
+	}
+	TimeDate[3] = tm.Wday;
+	TimeDate[4] = dec2bcd(tm.Day);
+	TimeDate[5] = dec2bcd(tm.Month);
+	y = tmYearToY2k(tm.Year);
+	if (y > 99)
+	{
+		TimeDate[5] |= 0x80; // century flag
+		y -= 100;
+	}
+	TimeDate[6] = dec2bcd(y);
+} 
+
 /**
  *
  */
@@ -123,12 +152,12 @@ void DS3232RTC::writeDate(tmElements_t &tm)
  *
  */
 void DS3232RTC::write(tmElements_t &tm) {
-  Wire.beginTransmission(DS3232_I2C_ADDRESS);
-  Wire.write(0);  // sends 00h - seconds register
-  _wTime(tm);
-  _wDate(tm);
-  Wire.endTransmission();
-  setOscillatorStopFlag(false);
+  uint8_t TimeDate[7];
+
+  populateTimeElements(tm, TimeDate);
+  populateDateElements(tm, TimeDate);
+
+  writeN(DS323X_TIME_REGS, TimeDate, 7);
 }
 
 /**
@@ -137,67 +166,67 @@ void DS3232RTC::write(tmElements_t &tm) {
 void DS3232RTC::readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm) {
   uint8_t data[4];
   uint8_t flags;
-  int i;
+  uint8_t addr, offset, length;
 
   memset(&tm, 0, sizeof(tmElements_t));
   mode = alarmModeUnknown;
   if ((alarm > 2) || (alarm < 1)) return;
+  if (alarm == 1)
+  {
+    addr = DS323X_ALARM1_REGS;
+    offset = 0;
+    length = 4;
+  } else {
+    addr = DS323X_ALARM2_REGS;
+    offset = 1;
+    length = 3;
+  }
 
-  Wire.beginTransmission(DS3232_I2C_ADDRESS);
-  Wire.write( ((alarm == 1) ? 0x07 : 0x0B) );
-  Wire.endTransmission();
-  Wire.requestFrom( DS3232_I2C_ADDRESS, ((alarm == 1) ? 4 : 3) );
-  if (Wire.available()) {
-    if (alarm == 1) {
-      for (i = 0; i < 4; i++) data[i] = Wire.read();
-    } else {
-      data[0] = 0;  // alarm 2 doesn't use seconds
-      for (i = 1; i < 4; i++) data[i] = Wire.read();
-    }
+  data[0] = 0;
+  readN(addr, data + offset * sizeof(uint8_t), length);
 
-    flags = ((data[0] & 0x80) >> 7) | ((data[1] & 0x80) >> 6) |
-      ((data[2] & 0x80) >> 5) | ((data[3] & 0x80) >> 4);
-    if (flags == 0) flags = ((data[3] & 0x40) >> 2);
-    switch (flags) {
-      case 0x04: mode = alarmModePerSecond; break;  // X1111
-      case 0x0E: mode = (alarm == 1) ? alarmModeSecondsMatch : alarmModePerMinute; break;  // X1110
-      case 0x0C: mode = alarmModeMinutesMatch; break;  // X1100
-      case 0x08: mode = alarmModeHoursMatch; break;  // X1000
-      case 0x00: mode = alarmModeDateMatch; break;  // 00000
-      case 0x10: mode = alarmModeDayMatch; break;  // 10000
-    }
+  flags = ((data[0] & 0x80) >> 7) | ((data[1] & 0x80) >> 6) |
+    ((data[2] & 0x80) >> 5) | ((data[3] & 0x80) >> 4);
+  if (flags == 0) flags = ((data[3] & 0x40) >> 2);
+  switch (flags) {
+    case 0x04: mode = alarmModePerSecond; break;  // X1111
+    case 0x0E: mode = (alarm == 1) ? alarmModeSecondsMatch : alarmModePerMinute; break;  // X1110
+    case 0x0C: mode = alarmModeMinutesMatch; break;  // X1100
+    case 0x08: mode = alarmModeHoursMatch; break;  // X1000
+    case 0x00: mode = alarmModeDateMatch; break;  // 00000
+    case 0x10: mode = alarmModeDayMatch; break;  // 10000
+  }
 
-    if (alarm == 1) tm.Second = bcd2dec(data[0] & 0x7F);
-    tm.Minute = bcd2dec(data[1] & 0x7F);
-    if ((data[2] & 0x40) != 0) {
-      // 12 hour format with bit 5 set as PM
-      tm.Hour = bcd2dec(data[2] & 0x1F);
-      if ((data[2] & 0x20) != 0) tm.Hour += 12;
-    } else {
-      // 24 hour format
-      tm.Hour = bcd2dec(data[2] & 0x3F);
-    }
-    if ((data[3] & 0x40) == 0) {
-      // Alarm holds Date (of Month)
-      tm.Day = bcd2dec(data[3] & 0x3F);
-    } else {
-      // Alarm holds Day (of Week)
-      tm.Wday = bcd2dec(data[3] & 0x07);
-    }
+  if (alarm == 1) tm.Second = bcd2dec(data[0] & 0x7F);
+  tm.Minute = bcd2dec(data[1] & 0x7F);
+  if ((data[2] & 0x40) != 0) {
+    // 12 hour format with bit 5 set as PM
+    tm.Hour = bcd2dec(data[2] & 0x1F);
+    if ((data[2] & 0x20) != 0) tm.Hour += 12;
+  } else {
+    // 24 hour format
+    tm.Hour = bcd2dec(data[2] & 0x3F);
+  }
+  if ((data[3] & 0x40) == 0) {
+    // Alarm holds Date (of Month)
+    tm.Day = bcd2dec(data[3] & 0x3F);
+  } else {
+    // Alarm holds Day (of Week)
+    tm.Wday = bcd2dec(data[3] & 0x07);
+  }
 
-    // TODO : Not too sure about this.
-    /*
-      If the alarm is set to trigger every Nth of the month
-      (or every 1-7 week day), but the date/day are 0 then
-      what?  The spec is not clear about alarm off conditions.
-      My assumption is that it would not trigger is date/day
-      set to 0, so I've created a Alarm-Off mode.
-    */
-    if ((mode == alarmModeDateMatch) && (tm.Day == 0)) {
-      mode = alarmModeOff;
-    } else if ((mode == alarmModeDayMatch) && (tm.Wday == 0)) {
-      mode = alarmModeOff;
-    }
+  // TODO : Not too sure about this.
+  /*
+    If the alarm is set to trigger every Nth of the month
+    (or every 1-7 week day), but the date/day are 0 then
+    what?  The spec is not clear about alarm off conditions.
+    My assumption is that it would not trigger is date/day
+    set to 0, so I've created a Alarm-Off mode.
+  */
+  if ((mode == alarmModeDateMatch) && (tm.Day == 0)) {
+    mode = alarmModeOff;
+  } else if ((mode == alarmModeDayMatch) && (tm.Wday == 0)) {
+    mode = alarmModeOff;
   }
 }
 
@@ -206,6 +235,7 @@ void DS3232RTC::readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm) {
  */
 void DS3232RTC::writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm) {
   uint8_t data[4];
+  uint8_t addr, offset, length;
 
   switch (mode) {
     case alarmModePerSecond:
@@ -259,13 +289,18 @@ void DS3232RTC::writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm) {
     default: return;
   }
 
-  Wire.beginTransmission(DS3232_I2C_ADDRESS);
-  Wire.write( ((alarm == 1) ? 0x07 : 0x0B) );
-  if (alarm == 1) Wire.write(data[0]);
-  Wire.write(data[1]);
-  Wire.write(data[2]);
-  Wire.write(data[3]);
-  Wire.endTransmission();
+  if (alarm == 1)
+  {
+    addr = DS323X_ALARM1_REGS;
+    offset = 0;
+    length = 4;
+  } else {
+    addr = DS323X_ALARM2_REGS;
+    offset = 1;
+    length = 3;
+  }
+
+  writeN( addr, data + offset * sizeof(uint8_t), length);
 }
 
 /**
@@ -273,33 +308,33 @@ void DS3232RTC::writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm) {
  */
 void DS3232RTC::setBBOscillator(bool enable) {
   // Bit7 is NOT EOSC, i.e. 0=started, 1=stopped when on battery power
-  uint8_t value = read1(0x0E);  // sends 0Eh - Control register
+  uint8_t value = readControlRegister();  // sends 0Eh - Control register
   if (enable) {
     value &= ~(DS323X_EOSC);
   } else {
     value |= DS323X_EOSC;
   }
-  write1(0x0E, value);    // sends 0Eh - Control register
+  writeControlRegister(value);
 }
 
 /**
  * Enable or disable the Sqare Wave in battery-backup mode
  */
 void DS3232RTC::setBBSqareWave(bool enable) {
-  uint8_t value = read1(0x0E);  // sends 0Eh - Control register
+  uint8_t value = readControlRegister();
   if (enable) {
     value |= DS323X_BBSQW;
   } else {
     value &= ~(DS323X_BBSQW);
   }
-  write1(0x0E, value);  // sends 0Eh - Control register
+  writeControlRegister(value);
 }
 
 /**
  *  Set the SQI pin to either a square wave generator or an alarm interupt
  */
 void DS3232RTC::setSQIMode(sqiMode_t mode) {
-  uint8_t value = read1(0x0E) & 0xE0;  // sends 0Eh - Control register
+  uint8_t value = readControlRegister() & 0xE0;  // sends 0Eh - Control register
   switch (mode) {
     case sqiModeNone: value |= DS323X_INTCN; break;
     case sqiMode1Hz: value |= DS323X_RS_1HZ;  break;
@@ -310,7 +345,7 @@ void DS3232RTC::setSQIMode(sqiMode_t mode) {
     case sqiModeAlarm2: value |= (DS323X_INTCN | DS323X_A2IE); break;
     case sqiModeAlarmBoth: value |= (DS323X_INTCN | DS323X_A1IE | DS323X_A2IE); break;
   }
-  write1(0x0E, value);  // sends 0Eh - Control register
+  writeControlRegister(value);
 }
 
 /**
@@ -319,7 +354,7 @@ void DS3232RTC::setSQIMode(sqiMode_t mode) {
 
 bool DS3232RTC::isAlarmInterrupt(uint8_t alarm) {
   if ((alarm > 2) || (alarm < 1)) return false;
-  uint8_t value = read1(0x0E) & 0x07;  // sends 0Eh - Control register
+  uint8_t value = readControlRegister() & 0x07;  // sends 0Eh - Control register
   if (alarm == 1) {
     return ((value & 0x05) == 0x05);
   } else {
@@ -331,21 +366,32 @@ bool DS3232RTC::isAlarmInterrupt(uint8_t alarm) {
  *  Read the control register.
  */
 uint8_t DS3232RTC::readControlRegister() {
-  return read1(0x0E);
+  return read1(DS323X_CONTROL_REG);
+}
+
+void DS3232RTC::writeControlRegister(uint8_t value)
+{
+  write1(DS323X_CONTROL_REG, value);
 }
 
 /**
  *  Read the status register.
  */
 uint8_t DS3232RTC::readStatusRegister() {
-  return read1(0x0F);
+  return read1(DS323X_STATUS_REG);
 }
+
+void DS3232RTC::writeStatusRegister(uint8_t value)
+{
+  write1(DS323X_STATUS_REG, value);
+}
+
 
 /**
  *
  */
 bool DS3232RTC::isOscillatorStopFlag() {
-  uint8_t value = read1(0x0F);  // sends 0Fh - Ctrl/Status register
+  uint8_t value = readStatusRegister();
   return ((value & DS323X_OSF) != 0);
 }
 
@@ -353,60 +399,61 @@ bool DS3232RTC::isOscillatorStopFlag() {
  *
  */
 void DS3232RTC::setOscillatorStopFlag(bool enable) {
-  uint8_t value = read1(0x0F);  // sends 0Fh - Ctrl/Status register
+  uint8_t value = readStatusRegister();
   if (enable) {
     value |= DS323X_OSF;
   } else {
     value &= ~(DS323X_OSF);
   }
-  write1(0x0F, value);  // sends 0Fh - Ctrl/Status register
+  writeStatusRegister(value);
 }
 
 /**
  *
  */
 void DS3232RTC::setBB33kHzOutput(bool enable) {
-  uint8_t value = read1(0x0F);  // sends 0Fh - Ctrl/Status register
+  uint8_t value = readStatusRegister();
   if (enable) {
     value |= DS323X_BB33KHZ;
   } else {
     value &= ~(DS323X_BB33KHZ);
   }
-  write1(0x0F, value);  // sends 0Fh - Ctrl/Status register
+  writeStatusRegister(value);
 }
 
 /**
  *
  */
 void DS3232RTC::setTCXORate(tempScanRate_t rate) {
-  uint8_t value = read1(0x0F) & 0xCF;  // sends 0Fh - Ctrl/Status register
+  const uint8_t rateBitMask = ~(DS323X_CRATE1|DS323X_CRATE0);
+  uint8_t value = readStatusRegister() & rateBitMask;  // clear rate bits
   switch (rate) {
     case tempScanRate64sec: value |= DS323X_CRATE_64; break;
     case tempScanRate128sec: value |= DS323X_CRATE_128; break;
     case tempScanRate256sec: value |= DS323X_CRATE_256; break;
     case tempScanRate512sec: value |= DS323X_CRATE_512; break;
   }
-  write1(0x0F, value);  // sends 0Fh - Ctrl/Status register
+  writeStatusRegister(value);
 }
 
 /**
  *
  */
 void DS3232RTC::set33kHzOutput(bool enable) {
-  uint8_t value = read1(0x0F);  // sends 0Fh - Ctrl/Status register
+  uint8_t value = readStatusRegister();
   if (enable) {
     value |= DS323X_EN33KHZ;
   } else {
     value &= ~(DS323X_EN33KHZ);
   }
-  write1(0x0F, value);  // sends 0Fh - Ctrl/Status register
+  writeStatusRegister(value);
 }
 
 /**
  *
  */
 bool DS3232RTC::isTCXOBusy() {
-  uint8_t value = read1(0x0F);  // sends 0Fh - Ctrl/Status register
+  uint8_t value = readStatusRegister();
   return ((value & DS323X_BSY) != 0);
 }
 
@@ -422,7 +469,7 @@ bool DS3232RTC::isAlarmFlag(uint8_t alarm) {
  *
  */
 uint8_t DS3232RTC::isAlarmFlag(){
-  uint8_t value = read1(0x0F);  // sends 0Fh - Ctrl/Status register
+  uint8_t value = readStatusRegister();
   return (value & (DS323X_A1F | DS323X_A2F));
 }
 
@@ -430,32 +477,26 @@ uint8_t DS3232RTC::isAlarmFlag(){
  *
  */
 void DS3232RTC::clearAlarmFlag(uint8_t alarm) {
-  alarm &= (DS323X_A1F | DS323X_A2F);
-  if (alarm == 0) return;
-  alarm = ~alarm;  // invert
-  alarm &= (DS323X_A1F | DS323X_A2F);
-  uint8_t value = read1(0x0F) & (~(DS323X_A1F | DS323X_A2F));  // sends 0Fh - Ctrl/Status register
-  value |= alarm;
-  write1(0x0F, value);  // sends 0Fh - Ctrl/Status register
+	uint8_t alarm_mask, value;
+
+	if ((alarm != 1) and (alarm != 2)) return;
+	alarm_mask = ~alarm;
+
+	value = readStatusRegister();
+	value &= alarm_mask;
+	writeStatusRegister(value);
 }
 
 /**
  *
  */
 void DS3232RTC::readTemperature(tpElements_t &tmp) {
-  Wire.beginTransmission(DS3232_I2C_ADDRESS);
-  Wire.write(0x11);  // sends 11h - MSB of Temp register
-  Wire.endTransmission();
+  uint8_t data[2];
 
-  Wire.requestFrom(DS3232_I2C_ADDRESS, 2);
+  readN(DS323X_TEMP_MSB, data, 2);
 
-  if (Wire.available()) {
-    tmp.Temp = Wire.read();
-    tmp.Decimal = (Wire.read() >> 6) * 25;
-  } else {
-    tmp.Temp = NO_TEMPERATURE;
-    tmp.Decimal = NO_TEMPERATURE;
-  }
+  tmp.Temp = data[0];
+  tmp.Decimal = (data[1] >> 6) * 25;
 }
 
 /**
@@ -470,30 +511,6 @@ uint8_t DS3232RTC::dec2bcd(uint8_t num) {
  */
 uint8_t DS3232RTC::bcd2dec(uint8_t num) {
   return (num/16 * 10) + (num % 16);
-}
-
-
-
-/**
- *
- */
-void DS3232RTC::_wDate(tmElements_t &tm) {
-  uint8_t m, y;
-  if (tm.Wday == 0 || tm.Wday > 7) {
-    tmElements_t tm2;
-    breakTime( makeTime(tm), tm2 );  // make and break to get Wday from Unix time
-    tm.Wday = tm2.Wday;
-  }
-  Wire.write(tm.Wday);            // set day (of week) (1~7, 1 = Sunday)
-  Wire.write(dec2bcd(tm.Day));    // set date (1~31)
-  y = tmYearToY2k(tm.Year);
-  m = dec2bcd(tm.Month);
-  if (y > 99) {
-    m |= 0x80;  // MSB is Century
-    y -= 100;
-  }
-  Wire.write(m);                 // set month, and MSB is year >= 100
-  Wire.write(dec2bcd(y));        // set year (0~99), 100~199 flag in month
 }
 
 /**

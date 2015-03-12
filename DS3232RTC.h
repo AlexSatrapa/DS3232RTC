@@ -52,7 +52,7 @@ class DS3232RTC
     static void setSQIMode(sqiMode_t mode);
     static bool isAlarmInterrupt(uint8_t alarm);
     static uint8_t readControlRegister();
-    static uint8_t readStatusRegister();
+    static void writeControlRegister(uint8_t value);
     // Control/Status Register
     static bool isOscillatorStopFlag();
     static void setOscillatorStopFlag(bool enable);
@@ -63,18 +63,20 @@ class DS3232RTC
     static bool isAlarmFlag(uint8_t alarm);
     static uint8_t isAlarmFlag();
     static void clearAlarmFlag(uint8_t alarm);
+    static uint8_t readStatusRegister();
+    static void writeStatusRegister(uint8_t value);
     // Temperature
     static void readTemperature(tpElements_t &tmp);
   private:
     static uint8_t dec2bcd(uint8_t num);
     static uint8_t bcd2dec(uint8_t num);
   protected:
-    static void _wTime(tmElements_t &tm);
-    static void _wDate(tmElements_t &tm);
     static uint8_t read1(uint8_t addr);
     static void write1(uint8_t addr, uint8_t data);
     static void readN(uint8_t addr, uint8_t buf[], uint8_t len);
     static void writeN(uint8_t addr, uint8_t buf[], uint8_t len);
+  	static void populateTimeElements( tmElements_t &tm, uint8_t TimeDate[] );
+    static void populateDateElements( tmElements_t &tm, uint8_t TimeDate[] );
 };
 
 extern DS3232RTC RTC;
