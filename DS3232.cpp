@@ -1,26 +1,26 @@
 /*
- * DS3232RTC.h - library for DS3232 RTC module from Freetronics; http://www.freetronics.com/rtc
+ * DS3232.h - library for DS3232 RTC module from Freetronics; http://www.freetronics.com/rtc
  * This library is intended to be used with Arduino Time.h library functions; http://playground.arduino.cc/Code/Time
 
- (See DS3232RTC.h for notes & license)
+ (See DS3232.h for notes & license)
  */
 
 #include <Stdint.h>
 #include <Wire.h>
 #include <Stream.h>
-#include <DS3232RTC.h>
+#include <DS3232.h>
 
 /* +----------------------------------------------------------------------+ */
-/* | DS3232RTC Class                                                      | */ 
+/* | DS3232 Class                                                      | */ 
 /* +----------------------------------------------------------------------+ */
 
 /**
  *
  */
-DS3232RTC::DS3232RTC() {
+DS3232::DS3232() {
 }
 
-bool DS3232RTC::available() {
+bool DS3232::available() {
   Wire.beginTransmission(DS3232_I2C_ADDRESS);
   Wire.write(0x05);  // sends 05h - month register
   Wire.endTransmission();
@@ -35,7 +35,7 @@ bool DS3232RTC::available() {
 /**  
  *
  */
-uint8_t DS3232RTC::read1(uint8_t addr) {
+uint8_t DS3232::read1(uint8_t addr) {
   Wire.beginTransmission(DS3232_I2C_ADDRESS);
   Wire.write(addr);
   Wire.endTransmission();
@@ -51,14 +51,14 @@ uint8_t DS3232RTC::read1(uint8_t addr) {
 /**
  *
  */
-void DS3232RTC::write1(uint8_t addr, uint8_t data){
+void DS3232::write1(uint8_t addr, uint8_t data){
   Wire.beginTransmission(DS3232_I2C_ADDRESS);
   Wire.write(addr);
   Wire.write(data);
   Wire.endTransmission();
 }
 
-void DS3232RTC::readN(uint8_t addr, uint8_t buf[], uint8_t len)
+void DS3232::readN(uint8_t addr, uint8_t buf[], uint8_t len)
 {
   uint8_t i;
   Wire.beginTransmission(DS3232_I2C_ADDRESS);
@@ -74,7 +74,7 @@ void DS3232RTC::readN(uint8_t addr, uint8_t buf[], uint8_t len)
   }
 }
 
-void DS3232RTC::writeN(uint8_t addr, uint8_t buf[], uint8_t len)
+void DS3232::writeN(uint8_t addr, uint8_t buf[], uint8_t len)
 {
   uint8_t i;
   Wire.beginTransmission(DS3232_I2C_ADDRESS);

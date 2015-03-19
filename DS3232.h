@@ -1,5 +1,5 @@
 /*
- * DS3232RTC.h - library for DS3232 RTC from Freetronics; http://www.freetronics.com/rtc
+ * DS3232.h - library for DS3232 RTC from Freetronics; http://www.freetronics.com/rtc
  * This library is intended to be used with Arduino Time.h library functions; http://playground.arduino.cc/Code/Time
  * Based on code by Jonathan Oxer at http://www.freetronics.com/pages/rtc-real-time-clock-module-quickstart-guide
  * Based on code by Michael Margolis at http://code.google.com/p/arduino-time
@@ -16,8 +16,8 @@
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#ifndef DS3232RTC_h
-#define DS3232RTC_h
+#ifndef DS3232_h
+#define DS3232_h
 
 #include <DSRTC.h>
 
@@ -29,12 +29,12 @@
 #define temperatureFToC(F) ((F - 32) * 5 / 9)
 
 /**
- * DS3232RTC Class
+ * DS3232 Class
  */
-class DS3232RTC: public DSRTC
+class DS3232: public DSRTC
 {
   public:
-    DS3232RTC();
+    DS3232();
     bool available();
   protected:
     uint8_t read1(uint8_t addr);
@@ -43,7 +43,7 @@ class DS3232RTC: public DSRTC
     void writeN(uint8_t addr, uint8_t buf[], uint8_t len);
 };
 
-extern DS3232RTC RTC;
+extern DS3232 RTC;
 
 /**
  * DS3232SRAM Class
