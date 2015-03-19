@@ -35,48 +35,48 @@ class DS3232RTC
 {
   public:
     DS3232RTC();
-    static bool available();
+    bool available();
     // Date and Time
-    static time_t get();
-    static void set(time_t t);
-    static void read(tmElements_t &tm);
-    static void write(tmElements_t &tm);
-    static void writeTime(tmElements_t &tm);
-    static void writeDate(tmElements_t &tm);
+    time_t get();
+    void set(time_t t);
+    void read(tmElements_t &tm);
+    void write(tmElements_t &tm);
+    void writeTime(tmElements_t &tm);
+    void writeDate(tmElements_t &tm);
     // Alarms
-    static void readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm);
-    static void writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm);
+    void readAlarm(uint8_t alarm, alarmMode_t &mode, tmElements_t &tm);
+    void writeAlarm(uint8_t alarm, alarmMode_t mode, tmElements_t tm);
     // Control Register
-    static void setBBOscillator(bool enable);
-    static void setBBSqareWave(bool enable);
-    static void setSQIMode(sqiMode_t mode);
-    static bool isAlarmInterrupt(uint8_t alarm);
-    static uint8_t readControlRegister();
-    static void writeControlRegister(uint8_t value);
+    void setBBOscillator(bool enable);
+    void setBBSqareWave(bool enable);
+    void setSQIMode(sqiMode_t mode);
+    bool isAlarmInterrupt(uint8_t alarm);
+    uint8_t readControlRegister();
+    void writeControlRegister(uint8_t value);
     // Control/Status Register
-    static bool isOscillatorStopFlag();
-    static void setOscillatorStopFlag(bool enable);
-    static void setBB33kHzOutput(bool enable);
-    static void setTCXORate(tempScanRate_t rate);
-    static void set33kHzOutput(bool enable);
-    static bool isTCXOBusy();
-    static bool isAlarmFlag(uint8_t alarm);
-    static uint8_t isAlarmFlag();
-    static void clearAlarmFlag(uint8_t alarm);
-    static uint8_t readStatusRegister();
-    static void writeStatusRegister(uint8_t value);
+    bool isOscillatorStopFlag();
+    void setOscillatorStopFlag(bool enable);
+    void setBB33kHzOutput(bool enable);
+    void setTCXORate(tempScanRate_t rate);
+    void set33kHzOutput(bool enable);
+    bool isTCXOBusy();
+    bool isAlarmFlag(uint8_t alarm);
+    uint8_t isAlarmFlag();
+    void clearAlarmFlag(uint8_t alarm);
+    uint8_t readStatusRegister();
+    void writeStatusRegister(uint8_t value);
     // Temperature
-    static void readTemperature(tpElements_t &tmp);
+    void readTemperature(tpElements_t &tmp);
   private:
-    static uint8_t dec2bcd(uint8_t num);
-    static uint8_t bcd2dec(uint8_t num);
+    uint8_t dec2bcd(uint8_t num);
+    uint8_t bcd2dec(uint8_t num);
   protected:
-    static uint8_t read1(uint8_t addr);
-    static void write1(uint8_t addr, uint8_t data);
-    static void readN(uint8_t addr, uint8_t buf[], uint8_t len);
-    static void writeN(uint8_t addr, uint8_t buf[], uint8_t len);
-  	static void populateTimeElements( tmElements_t &tm, uint8_t TimeDate[] );
-    static void populateDateElements( tmElements_t &tm, uint8_t TimeDate[] );
+    uint8_t read1(uint8_t addr);
+    void write1(uint8_t addr, uint8_t data);
+    void readN(uint8_t addr, uint8_t buf[], uint8_t len);
+    void writeN(uint8_t addr, uint8_t buf[], uint8_t len);
+  	void populateTimeElements( tmElements_t &tm, uint8_t TimeDate[] );
+    void populateDateElements( tmElements_t &tm, uint8_t TimeDate[] );
 };
 
 extern DS3232RTC RTC;
@@ -89,8 +89,8 @@ class DS3232SRAM : public Stream
   public:
     DS3232SRAM();
     // more like EEPROMClass
-    static uint8_t read(int addr);
-    static void write(int addr, uint8_t data);
+    uint8_t read(int addr);
+    void write(int addr, uint8_t data);
 
     // from Print class
     #if ARDUINO >= 100
